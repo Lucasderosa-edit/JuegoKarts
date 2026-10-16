@@ -49,6 +49,24 @@ export class TrackPath {
     }
   }
 
+  // Índice de muestra para una posición expresada en puntos de control
+  // (ej. 4.5 = a mitad de camino entre el punto 4 y el 5)
+  sampleAtControl(at) {
+    if (!this._cpIndex) {
+      this._cpIndex = this.def.points.map(([x, z]) => this.nearest(x, z));
+    }
+    const n = this._cpIndex.length;
+    const a = Math.floor(at) % n, b = (a + 1) % n;
+    const t = at - Math.floor(at);
+    let ia = this._cpIndex[a], ib = this._cpIndex[b];
+    if (ib < ia) ib += this.count;
+    return this.wrap(Math.round(ia + (ib - ia) * t));
+  }
+
+  distanceAtControl(at) {
+    return this.sampleAtControl(at) * this.spacing;
+  }
+
   wrap(i) {
     return ((i % this.count) + this.count) % this.count;
   }

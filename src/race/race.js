@@ -129,6 +129,7 @@ export class Race {
       d.kart.update(dt, racing ? d.controls : NO_INPUT);
     }
     if (racing) this.items.update(dt);
+    this.track.update(dt, racing ? this : null);
     resolveKartCollisions(this.karts, (a, b, strength, x, z) => {
       if (strength > 0.15) this.sparks(x, z, Math.round(4 + strength * 10), '#ffffff');
       this.emit('bump', { a, b, strength });
@@ -260,6 +261,7 @@ export class Race {
     pl.camera.aspect = w / h;
     pl.camera.updateProjectionMatrix();
     this.env.follow(pl.kart.position);
+    this.track.animate(frameDt, pl.kart.position);
     r.render(this.scene, pl.camera);
     for (const p of this.players) p.hud.update({ kart: p.kart, progress: p.kart.progress, raceTime: Math.max(0, this.raceTime), rank: p.kart.rank || this.karts.length, total: this.karts.length });
   }

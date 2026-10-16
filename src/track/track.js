@@ -3,6 +3,7 @@ import { TrackPath } from './trackPath.js';
 import { buildTrackMeshes } from './trackMesh.js';
 import { buildDecor, trackBounds } from './decor.js';
 import { CONFIG } from '../config.js';
+import { Obstacles } from './obstacles.js';
 
 const q = {};
 
@@ -25,8 +26,28 @@ export class Track {
     ground.receiveShadow = quality.shadows;
     this.group.add(ground);
 
-    this.group.add(buildTrackMeshes(this.path, this.theme, { shadows: quality.shadows }));
-    this.group.add(buildDecor(def.decor, this.path, this.theme, quality, def.decorOptions));
+    this.group.add(buildTrackMeshes(this.path, this.theme, { shadows: quality.shadows, zones: def.zones || [] }));
+    this.decor = buildDecor(def.decor, this.path, this.theme, quality, def);
+    this.group.add(this.decor);
+
+    // Zonas con otra superficie, guardadas por muestra para consultar rápido
+    this.zoneAt = new Array(this.path.count).fill(null);
+    for (const z of def.zones || []) {
+      const a = this.path.sampleAtControl(z.from), b = this.path.sampleAtControl(z.to);
+      for (let i = a; i !== b; i = (i + 1) % this.path.count) this.zoneAt[i] = z;
+    }
+
+    this.obstacles = new Obstacles(this, def.obstacles || [], quality);
+    this.group.add(this.obstacles.group);
+  }
+
+  update(dt, race) {
+    this.obstacles.update(dt, race);
+  }
+
+  // Animaciones de decoración (nieve que cae, etc.) que siguen a la cámara
+  animate(dt, focus) {
+    this.decor.userData.update?.(dt, focus);
   }
 
   // Posiciones de largada (dos columnas, escalonadas, detrás de la línea)
@@ -48,14 +69,17 @@ export class Track {
 
     const abs = Math.abs(q.lateral);
     const surf = kart.surface;
+    const zone = this.zoneAt[q.index];
     if (abs > path.halfWidth + 0.6) {
-      surf.speed = CONFIG.track.offroadSpeed;
+      surf.speed = zone?.offroadSpeed ?? CONFIG.track.offroadSpeed;
       surf.grip = CONFIG.track.offroadGrip;
       surf.offroad = true;
-      surf.dustColor = this.theme.dust;
+      surf.dustColor = zone?.dust ?? this.theme.dust;
     } else {
       surf.speed = 1; surf.grip = 1; surf.offroad = false;
     }
+    surf.ice = false;
+    this.obstacles.applySurface(kart, q, surf);
 
     // Choque contra el borde
     const limit = path.wallOffset - kart.stats.radius;

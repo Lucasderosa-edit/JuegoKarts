@@ -7,6 +7,8 @@ export function setupEnvironment(scene, theme, quality) {
 
   const hemi = new THREE.HemisphereLight(theme.hemiSky, theme.hemiGround, theme.hemiIntensity);
   scene.add(hemi);
+  // Luz pareja extra para las pistas de noche (que se vean los karts)
+  if (theme.ambient) scene.add(new THREE.AmbientLight(theme.ambient, theme.ambientIntensity ?? 1));
 
   const sun = new THREE.DirectionalLight(theme.sunColor, theme.sunIntensity);
   sun.castShadow = quality.shadows;

@@ -60,35 +60,44 @@ function wall(path, offset, height, thickness, colorFn) {
   return g;
 }
 
-export function buildTrackMeshes(path, theme, { shadows = true } = {}) {
+export function buildTrackMeshes(path, theme, { shadows = true, zones = [] } = {}) {
   const group = new THREE.Group();
   const hw = path.halfWidth;
   const curbW = 1.3;
+  // Color de cada muestra según la zona (muelle, etc.)
+  const zoneAt = new Array(path.count).fill(null);
+  for (const z of zones) {
+    const a = path.sampleAtControl(z.from), b = path.sampleAtControl(z.to);
+    for (let i = a; i !== b; i = (i + 1) % path.count) zoneAt[i] = z;
+  }
+  const pick = (key) => (i) => (zoneAt[i]?.[key] ?? theme[key]);
   const vc = (opts = {}) => new THREE.MeshLambertMaterial({ vertexColors: true, ...opts });
 
   // Pasto lento entre el asfalto y el borde (un poco más oscuro)
   const off = new THREE.Mesh(
     new THREE.BufferGeometry(), vc(),
   );
-  const offL = ribbon(path, -path.wallOffset, -hw - curbW, 0.015, () => theme.offroad);
-  const offR = ribbon(path, hw + curbW, path.wallOffset, 0.015, () => theme.offroad);
+  const offL = ribbon(path, -path.wallOffset, -hw - curbW, 0.015, pick('offroad'));
+  const offR = ribbon(path, hw + curbW, path.wallOffset, 0.015, pick('offroad'));
   off.geometry = mergeGeometries([offL, offR]);
   off.receiveShadow = shadows;
   group.add(off);
 
   // Asfalto
-  const road = new THREE.Mesh(ribbon(path, -hw, hw, 0.03, () => theme.road), vc());
+  const road = new THREE.Mesh(ribbon(path, -hw, hw, 0.03, pick('road')), vc());
   road.receiveShadow = shadows;
   group.add(road);
 
   // Línea central discontinua
-  const dash = (i) => (Math.floor(i / 3) % 2 === 0 ? theme.roadLine : theme.road);
-  const center = new THREE.Mesh(ribbon(path, -0.22, 0.22, 0.035, dash), vc());
+  const road_ = pick('road'), line_ = pick('roadLine');
+  const dash = (i) => (Math.floor(i / 3) % 2 === 0 ? line_(i) : road_(i));
+  const center = new THREE.Mesh(ribbon(path, -0.22, 0.22, 0.035, dash), theme.night ? new THREE.MeshBasicMaterial({ vertexColors: true }) : vc());
   center.receiveShadow = shadows;
   group.add(center);
 
   // Cordones rojos y blancos
-  const curbColor = (i) => (Math.floor(i / 2) % 2 === 0 ? theme.curbA : theme.curbB);
+  const ca = pick('curbA'), cb = pick('curbB');
+  const curbColor = (i) => (Math.floor(i / 2) % 2 === 0 ? ca(i) : cb(i));
   const curbs = new THREE.Mesh(mergeGeometries([
     ribbon(path, -hw - curbW, -hw, 0.04, curbColor),
     ribbon(path, hw, hw + curbW, 0.04, curbColor),
@@ -97,11 +106,12 @@ export function buildTrackMeshes(path, theme, { shadows = true } = {}) {
   group.add(curbs);
 
   // Bordes de la pista
-  const wallColor = (i) => (Math.floor(i / 3) % 2 === 0 ? theme.wallA : theme.wallB);
+  const wa = pick('wallA'), wb = pick('wallB');
+  const wallColor = (i) => (Math.floor(i / 3) % 2 === 0 ? wa(i) : wb(i));
   const walls = new THREE.Mesh(mergeGeometries([
     wall(path, path.wallOffset, 0.9, 0.7, wallColor),
     wall(path, -path.wallOffset, 0.9, 0.7, wallColor),
-  ]), vc({ side: THREE.DoubleSide }));
+  ]), theme.wallEmissive ? new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }) : vc({ side: THREE.DoubleSide }));
   walls.castShadow = shadows;
   walls.receiveShadow = shadows;
   group.add(walls);
