@@ -11,6 +11,7 @@ import { formatTime } from '../ui/format.js';
 import { CHARACTERS, getCharacter, physicsStats } from '../kart/characters.js';
 import { AIDriver } from '../ai/aiDriver.js';
 import { resolveKartCollisions } from '../kart/collisions.js';
+import { ItemManager } from '../items/itemManager.js';
 
 const NO_INPUT = { throttle: 0, brake: 0, steer: 0, drift: false, item: false, itemPressed: false };
 
@@ -71,6 +72,9 @@ export class Race {
       this.emit('wall', { kart, strength });
     };
 
+    this.items = new ItemManager(this);
+    for (const d of this.ais) d.items = this.items;
+
     this.state = 'countdown';
     this.countdown = CONFIG.race.countdownSeconds;
     this.raceTime = 0;
@@ -107,16 +111,22 @@ export class Race {
     for (const pl of this.players) {
       if (pl.autopilot) {
         pl.autopilot.update(dt, pl.autopilot.controls);
+        this.items.updateAI(pl.autopilot, dt);
         pl.kart.update(dt, pl.autopilot.controls);
       } else {
+        if (racing && pl.controls.itemPressed) this.items.use(pl.kart);
         pl.kart.update(dt, racing ? pl.controls : NO_INPUT);
       }
     }
     this.updateRubberBand();
     for (const d of this.ais) {
-      if (racing) d.update(dt, d.controls);
+      if (racing) {
+        d.update(dt, d.controls);
+        this.items.updateAI(d, dt);
+      }
       d.kart.update(dt, racing ? d.controls : NO_INPUT);
     }
+    if (racing) this.items.update(dt);
     resolveKartCollisions(this.karts, (a, b, strength, x, z) => {
       if (strength > 0.15) this.sparks(x, z, Math.round(4 + strength * 10), '#ffffff');
       this.emit('bump', { a, b, strength });
@@ -134,6 +144,13 @@ export class Race {
 
   emit(type, data) {
     for (const fn of this.listeners[type] || []) fn(data);
+  }
+
+  burst(x, y, z, colors, n) {
+    for (let i = 0; i < n; i++) {
+      this.particles.emit(x, y, z, (Math.random() - 0.5) * 9, 1 + Math.random() * 5, (Math.random() - 0.5) * 9,
+        colors[i % colors.length], { life: 0.4 + Math.random() * 0.3, size: 0.22, gravity: 10, drag: 2 });
+    }
   }
 
   sparks(x, z, n, color) {
@@ -221,6 +238,7 @@ export class Race {
         pl.hud.showMessage('¡LLEGADA!');
         // Al terminar, la computadora sigue manejando el kart del jugador
         pl.autopilot = new AIDriver(kart, this.track, { seed: 5 });
+        pl.autopilot.items = this.items;
         pl.autopilot.controls = { ...NO_INPUT };
       }
       if (this.players.every((p) => p.kart.progress.finished)) {
@@ -241,10 +259,11 @@ export class Race {
     pl.camera.updateProjectionMatrix();
     this.env.follow(pl.kart.position);
     r.render(this.scene, pl.camera);
-    for (const p of this.players) p.hud.update({ progress: p.kart.progress, raceTime: Math.max(0, this.raceTime), rank: p.kart.rank || this.karts.length, total: this.karts.length });
+    for (const p of this.players) p.hud.update({ kart: p.kart, progress: p.kart.progress, raceTime: Math.max(0, this.raceTime), rank: p.kart.rank || this.karts.length, total: this.karts.length });
   }
 
   dispose() {
+    this.items.dispose();
     for (const p of this.players) p.hud.dispose();
     this.scene.traverse((o) => {
       if (o.geometry) o.geometry.dispose();

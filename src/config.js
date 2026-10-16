@@ -82,6 +82,28 @@ export const CONFIG = {
     playerGridSlot: 7,     // el jugador larga último (0 = primero)
   },
 
+  // Ítems
+  items: {
+    boxRows: [0.16, 0.46, 0.75],   // dónde hay filas de cajas (fracción de la vuelta)
+    boxesPerRow: 5,
+    boxRespawn: 2.5,       // segundos hasta que reaparece una caja
+    rouletteTime: 1.1,     // segundos que gira la ruleta antes de dar el ítem
+    turboDuration: 1.5,
+    projectileSpeed: 52,   // m/s
+    projectileLife: 3.5,
+    projectileBounces: 2,  // rebotes contra los bordes antes de romperse
+    trapLife: 45,
+    shieldDuration: 8,
+    spinDuration: 1.1,     // segundos que gira un kart al ser golpeado
+    spinSpeedKeep: 0.35,   // velocidad que conserva al ser golpeado
+    // Probabilidad de cada ítem según la posición (los de atrás reciben más turbo)
+    weights: {
+      front: { turbo: 15, proyectil: 25, trampa: 42, escudo: 18 },
+      middle: { turbo: 30, proyectil: 35, trampa: 15, escudo: 20 },
+      back: { turbo: 52, proyectil: 30, trampa: 4, escudo: 14 },
+    },
+  },
+
   // Choques entre karts
   collisions: {
     restitution: 0.55,     // qué tan elástico es el choque (0-1)

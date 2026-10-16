@@ -1,5 +1,6 @@
 import './hud.css';
 import { formatTime } from './format.js';
+import { ITEM_TYPES, ITEM_IDS } from '../items/itemTypes.js';
 
 // HUD de un jugador (en pantalla dividida hay uno por mitad).
 export class Hud {
@@ -13,6 +14,7 @@ export class Hud {
         <div class="hud-laps" data-lap-list></div>
       </div>
       <div class="hud-top-right"><div class="hud-pos" data-pos>8.º<small>/8</small></div></div>
+      <div class="hud-item" data-item-box><img data-item alt="" hidden></div>
       <div class="hud-warn" data-warn>¡CONTRAMANO!</div>
       <div class="hud-center"><div data-center></div></div>`;
     parent.appendChild(this.el);
@@ -24,6 +26,9 @@ export class Hud {
     this.centerEl = this.q('[data-center]');
     this.warnEl = this.q('[data-warn]');
     this.posEl = this.q('[data-pos]');
+    this.itemBoxEl = this.q('[data-item-box]');
+    this.itemEl = this.q('[data-item]');
+    this._lastItem = null;
     this._lastLapCount = -1;
     this._lastPos = '';
   }
@@ -36,7 +41,17 @@ export class Hud {
     this.centerEl.innerHTML = `<div class="hud-msg pop">${text}</div>`;
   }
 
-  update({ progress, raceTime, rank, total }) {
+  update({ kart, progress, raceTime, rank, total }) {
+    let icon = null;
+    if (kart.itemRoll > 0) icon = ITEM_IDS[Math.floor(kart.itemRoll * 14) % ITEM_IDS.length];
+    else if (kart.item) icon = kart.item;
+    if (icon !== this._lastItem) {
+      this._lastItem = icon;
+      this.itemEl.hidden = !icon;
+      if (icon) this.itemEl.src = ITEM_TYPES[icon].icon;
+      this.itemBoxEl.classList.toggle('rolling', kart.itemRoll > 0);
+    }
+    this.itemBoxEl.classList.toggle('ready', !!kart.item && kart.itemRoll <= 0);
     const posText = `${rank}.º<small>/${total}</small>`;
     if (posText !== this._lastPos) {
       this._lastPos = posText;

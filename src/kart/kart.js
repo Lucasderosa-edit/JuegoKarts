@@ -5,6 +5,7 @@ import { buildKartModel, flatMat } from './kartModel.js';
 const tmpFwd = new THREE.Vector2();
 const tmpRight = new THREE.Vector2();
 const tmpV = new THREE.Vector3();
+const SPIN_CONTROLS = { throttle: 0, brake: 0, steer: 0, drift: false, item: false, itemPressed: false };
 
 // Kart con física arcade en el plano XZ.
 // rotation.y = yaw; el frente local (+Z) apunta a (sin yaw, cos yaw).
@@ -43,6 +44,14 @@ export class Kart {
     this.bumpTime = 0;
     this.bumpAmount = 0;
     this.shieldTime = 0;
+    this.shieldMesh = null;
+    this.spinTime = 0;
+    this.spinAngle = 0;
+
+    // Ítems
+    this.item = null;
+    this.itemRoll = 0;
+    this.itemHeldTime = 0;
 
     // Animaciones
     this.wheelSpin = 0;
@@ -94,9 +103,27 @@ export class Kart {
     if (amount > 0.5 && this.drifting) { this.drifting = false; this.driftLevel = 0; this.driftTime = 0; }
   }
 
+  // Golpeado por un ítem: gira y pierde velocidad
+  spinOut() {
+    this.spinTime = CONFIG.items.spinDuration;
+    this.drifting = false;
+    this.driftLevel = 0;
+    this.driftTime = 0;
+    this.boostTime = 0;
+    this.velocity.multiplyScalar(CONFIG.items.spinSpeedKeep);
+    this.hopV = 6;
+  }
+
   update(dt, controls) {
     const s = this.stats;
     if (this.bumpTime > 0) this.bumpTime = Math.max(0, this.bumpTime - dt);
+    if (this.shieldTime > 0) this.shieldTime = Math.max(0, this.shieldTime - dt);
+    if (this.spinTime > 0) {
+      this.spinTime = Math.max(0, this.spinTime - dt);
+      this.spinAngle = (1 - this.spinTime / CONFIG.items.spinDuration) * Math.PI * 4;
+      if (this.spinTime === 0) this.spinAngle = 0;
+      controls = SPIN_CONTROLS;
+    }
     const d = CONFIG.drift;
     this.time += dt;
     const fwd = tmpFwd.set(Math.sin(this.yaw), Math.cos(this.yaw));
@@ -254,7 +281,15 @@ export class Kart {
 
   syncObject() {
     this.object.position.set(this.position.x, this.position.y + this.hopY, this.position.z);
-    this.object.rotation.y = this.yaw + this.driftVisual;
+    this.object.rotation.y = this.yaw + this.driftVisual + this.spinAngle;
+    if (this.shieldMesh) {
+      this.shieldMesh.visible = this.shieldTime > 0;
+      if (this.shieldMesh.visible) {
+        const blink = this.shieldTime < 1.5 && Math.sin(this.time * 30) > 0;
+        this.shieldMesh.scale.setScalar((1 + Math.sin(this.time * 8) * 0.04) * (blink ? 0.92 : 1));
+        this.shieldMesh.rotation.y = this.time * 1.5;
+      }
+    }
     const m = this.model;
     const shake = this.bumpTime > 0 ? Math.sin(this.bumpTime * 60) * this.bumpAmount * (this.bumpTime / 0.35) : 0;
     m.chassis.rotation.z = this.visualLean + shake;

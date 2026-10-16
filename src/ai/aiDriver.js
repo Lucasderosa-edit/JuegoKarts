@@ -46,7 +46,13 @@ export class AIDriver {
 
     // En las curvas se tira hacia adentro
     const inside = -Math.sign(curvAvg) * Math.min(1, Math.abs(curvAvg) / 0.03) * path.halfWidth * 0.45;
-    const lateral = Math.max(-path.halfWidth * 0.8, Math.min(path.halfWidth * 0.8, this.lane() * 0.6 + inside + this.avoid));
+    let wanted = this.lane() * 0.6 + inside;
+    // Sin ítem: ir a buscar una caja
+    if (this.items && !k.item && k.itemRoll <= 0) {
+      const box = this.items.findBoxAhead(k);
+      if (box) wanted = box.lateral;
+    }
+    const lateral = Math.max(-path.halfWidth * 0.8, Math.min(path.halfWidth * 0.8, wanted + this.avoid));
     this.avoid *= Math.exp(-2 * dt);
 
     const look = ai.lookAheadBase + speed * ai.lookAheadPerSpeed;
