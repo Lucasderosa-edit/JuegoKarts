@@ -10,6 +10,8 @@ import { getCharacter } from './kart/characters.js';
 import { showResults } from './ui/results.js';
 import { formatTime } from './ui/format.js';
 import * as screens from './ui/screens.js';
+import { AudioEngine } from './audio/audio.js';
+import { attachRaceAudio } from './audio/raceAudio.js';
 
 // Controla el flujo del juego: menús, carrera, pausa y resultados.
 export class App {
@@ -34,6 +36,11 @@ export class App {
     this.fpsLabel.className = 'debug-fps';
     this.ui.appendChild(this.fpsLabel);
     this.updateFpsLabel();
+
+    this.audio = new AudioEngine();
+    this.raceAudio = null;
+    // Sonido al tocar cualquier botón de los menús
+    this.ui.addEventListener('click', (e) => { if (e.target.closest('button')) this.audio.sfx('click'); });
 
     this.race = null;
     this.paused = false;
@@ -85,6 +92,7 @@ export class App {
 
   showMainMenu() {
     this.endRace();
+    this.audio.playMusic('menu');
     this.setScreen(screens.mainMenu({
       onSolo: () => this.chooseCharacters(1),
       onDuo: () => this.chooseCharacters(2),
@@ -115,6 +123,7 @@ export class App {
   }
 
   chooseTrack(config) {
+    this.audio.playMusic('menu');
     this.setScreen(screens.trackSelect({
       bestTimes: this.bestTimes?.() || {},
       onPick: (trackId) => this.startRace({ ...config, trackId }),
@@ -145,6 +154,9 @@ export class App {
         rivalCount: CONFIG.ai.count + 1 - config.players,
       });
       this.race.onFinish = (race) => setTimeout(() => this.showRaceResults(race), 2500);
+      this.raceAudio = attachRaceAudio(this.race, this.audio);
+      this.audio.playMusic(trackDef.id);
+      this.audio.setMusicTempo(1);
       this.onRaceCreated?.(this.race);
       this.paused = false;
       this.setScreen(null);
@@ -158,6 +170,8 @@ export class App {
   endRace() {
     this.results?.close();
     this.results = null;
+    this.raceAudio?.dispose();
+    this.raceAudio = null;
     if (this.race) {
       this.onRaceEnded?.(this.race);
       this.race.dispose();
@@ -201,6 +215,7 @@ export class App {
   pause() {
     if (!this.race || this.paused || this.results || this.race.state === 'finished') return;
     this.paused = true;
+    this.audio.duck(true);
     this.onPause?.(true);
     this.showPauseMenu();
   }
@@ -217,6 +232,7 @@ export class App {
   resume() {
     if (!this.paused) return;
     this.paused = false;
+    this.audio.duck(false);
     this.onPause?.(false);
     this.setScreen(null);
   }
@@ -252,6 +268,7 @@ export class App {
   render(dt) {
     if (this.race) {
       this.race.render(this.paused ? 0 : dt);
+      this.raceAudio?.update(dt, this.paused);
     } else {
       this.renderer.clear();
     }

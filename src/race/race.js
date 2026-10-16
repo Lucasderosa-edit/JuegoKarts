@@ -197,7 +197,7 @@ export class Race {
     if (shown !== this._lastCount && shown > 0) {
       this._lastCount = shown;
       for (const pl of this.players) pl.hud.showCountdown(shown);
-      this.onCountdownTick?.(shown);
+      this.emit('countdown', { n: shown });
     }
     // Turbo de largada: acelerar en la ventana justa antes del ¡YA!
     for (const pl of this.players) {
@@ -210,7 +210,7 @@ export class Race {
         pl.hud.showCountdown('¡YA!', true);
         if (pl.throttleSince !== null && pl.throttleSince <= CONFIG.race.startBoostWindow) pl.kart.boost(CONFIG.race.startBoostDuration);
       }
-      this.onCountdownTick?.(0);
+      this.emit('countdown', { n: 0 });
     }
   }
 
@@ -230,6 +230,8 @@ export class Race {
 
   handleProgress(kart, event) {
     if (!event) return;
+    if (event === 'lap') this.emit('lap', { kart, final: kart.progress.lap === kart.progress.laps });
+    if (event === 'finish') this.emit('finish', { kart });
     const pl = this.players.find((p) => p.kart === kart);
     if (event === 'lap' && pl) {
       const p = kart.progress;
