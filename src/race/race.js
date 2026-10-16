@@ -86,7 +86,7 @@ export class Race {
   }
 
   addKart(character, slotIndex) {
-    const kart = new Kart({ colors: character.kart, stats: physicsStats(character), name: character.name, particles: this.particles });
+    const kart = new Kart({ colors: character.kart, stats: physicsStats(character), name: character.name, particles: this.particles, characterId: character.id });
     kart.character = character;
     const slot = this.track.gridSlot(slotIndex);
     kart.setPose(slot.x, slot.z, slot.yaw);

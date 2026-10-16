@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { buildKartModel, flatMat } from './kartModel.js';
+import { buildDriver } from './characterModels.js';
 
 const tmpFwd = new THREE.Vector2();
 const tmpRight = new THREE.Vector2();
@@ -10,11 +11,15 @@ const SPIN_CONTROLS = { throttle: 0, brake: 0, steer: 0, drift: false, item: fal
 // Kart con física arcade en el plano XZ.
 // rotation.y = yaw; el frente local (+Z) apunta a (sin yaw, cos yaw).
 export class Kart {
-  constructor({ colors, stats = {}, name = 'Kart', particles = null } = {}) {
+  constructor({ colors, stats = {}, name = 'Kart', particles = null, characterId = null } = {}) {
     this.name = name;
     this.stats = { ...CONFIG.kart, ...stats };
     this.model = buildKartModel(colors);
     this.object = this.model.root;
+    if (characterId) {
+      this.driver = buildDriver(characterId);
+      this.model.driverSlot.add(this.driver.root);
+    }
     this.particles = particles;
 
     this.position = new THREE.Vector3();
@@ -296,6 +301,15 @@ export class Kart {
     m.chassis.rotation.x = shake * 0.5;
     for (const w of m.wheels) w.rotation.x = this.wheelSpin;
     for (const p of m.frontPivots) p.rotation.y = -this.steer * 0.45;
+    if (this.driver) {
+      // El piloto se inclina en las curvas, mira hacia donde dobla y rebota un poco
+      const d = this.driver;
+      d.root.rotation.z = -this.steer * 0.12 + shake;
+      d.head.rotation.y = -this.steer * 0.35 - this.driftVisual * 0.6;
+      d.head.position.y = d.head.userData.baseY ??= d.head.position.y;
+      d.head.position.y = d.head.userData.baseY + Math.sin(this.time * 18) * Math.min(1, Math.abs(this.speed) / 30) * 0.02;
+      if (this.spinTime > 0) d.head.rotation.z = Math.sin(this.time * 30) * 0.3; else d.head.rotation.z = 0;
+    }
     this.flame.visible = this.boostTime > 0;
     if (this.flame.visible) this.flame.scale.set(1, 1, 0.8 + Math.sin(this.time * 60) * 0.3);
   }
