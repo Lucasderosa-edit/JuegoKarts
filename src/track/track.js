@@ -67,11 +67,18 @@ export class Track {
       kart.position.z -= nz * push;
       const vn = kart.velocity.x * nx + kart.velocity.y * nz;
       if (vn > 0) {
-        const bounce = CONFIG.track.wallBounce;
-        kart.velocity.x -= (1 + bounce) * vn * nx;
-        kart.velocity.y -= (1 + bounce) * vn * nz;
-        kart.velocity.multiplyScalar(CONFIG.track.wallSpeedKeep);
-        if (kart.onWallHit) kart.onWallHit(vn);
+        const t = CONFIG.track;
+        kart.velocity.x -= (1 + t.wallBounce) * vn * nx;
+        kart.velocity.y -= (1 + t.wallBounce) * vn * nz;
+        kart.velocity.multiplyScalar(t.wallSpeedKeep);
+        // Enderezar el kart a lo largo del borde para que no quede trabado
+        const along = Math.atan2(path.tx[q.index], path.tz[q.index]);
+        const dir = Math.cos(kart.yaw - along) >= 0 ? along : along + Math.PI;
+        let d = dir - kart.yaw;
+        d = Math.atan2(Math.sin(d), Math.cos(d));
+        kart.yaw += d * t.wallAlign * Math.min(1, vn / 10);
+        kart.bump(Math.min(1, vn / 12));
+        this.onWallHit?.(kart, vn, kart.position.x + nx * kart.stats.radius, kart.position.z + nz * kart.stats.radius);
       }
     }
   }

@@ -82,12 +82,19 @@ export const CONFIG = {
     playerGridSlot: 7,     // el jugador larga último (0 = primero)
   },
 
+  // Choques entre karts
+  collisions: {
+    restitution: 0.55,     // qué tan elástico es el choque (0-1)
+    minPush: 2.2,          // empujón mínimo para que no queden pegados
+  },
+
   // Pista
   track: {
     offroadSpeed: 0.5,     // en el pasto, la velocidad máxima baja a la mitad
     offroadGrip: 0.75,
-    wallBounce: 0.35,      // cuánto rebota el kart contra el borde (0-1)
-    wallSpeedKeep: 0.92,   // velocidad que conserva al chocar
+    wallBounce: 0.45,      // cuánto rebota el kart contra el borde (0-1)
+    wallSpeedKeep: 0.9,    // velocidad que conserva al chocar
+    wallAlign: 0.35,       // cuánto se endereza el kart al rozar el borde
   },
 
   // Cámara en tercera persona

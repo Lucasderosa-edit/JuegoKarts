@@ -39,6 +39,11 @@ export class Kart {
     // Superficie actual (la pista la actualiza: pasto, hielo, etc.)
     this.surface = { speed: 1, grip: 1, offroad: false };
 
+    // Golpes
+    this.bumpTime = 0;
+    this.bumpAmount = 0;
+    this.shieldTime = 0;
+
     // Animaciones
     this.wheelSpin = 0;
     this.visualLean = 0;
@@ -82,8 +87,16 @@ export class Kart {
     this.velocity.set(fwd.x * kick - fwd.y * lat, fwd.y * kick + fwd.x * lat);
   }
 
+  // Sacudida visual al chocar (y corta el derrape si el golpe es fuerte)
+  bump(amount) {
+    this.bumpTime = 0.35;
+    this.bumpAmount = Math.min(0.35, amount * 0.5);
+    if (amount > 0.5 && this.drifting) { this.drifting = false; this.driftLevel = 0; this.driftTime = 0; }
+  }
+
   update(dt, controls) {
     const s = this.stats;
+    if (this.bumpTime > 0) this.bumpTime = Math.max(0, this.bumpTime - dt);
     const d = CONFIG.drift;
     this.time += dt;
     const fwd = tmpFwd.set(Math.sin(this.yaw), Math.cos(this.yaw));
@@ -243,7 +256,9 @@ export class Kart {
     this.object.position.set(this.position.x, this.position.y + this.hopY, this.position.z);
     this.object.rotation.y = this.yaw + this.driftVisual;
     const m = this.model;
-    m.chassis.rotation.z = this.visualLean;
+    const shake = this.bumpTime > 0 ? Math.sin(this.bumpTime * 60) * this.bumpAmount * (this.bumpTime / 0.35) : 0;
+    m.chassis.rotation.z = this.visualLean + shake;
+    m.chassis.rotation.x = shake * 0.5;
     for (const w of m.wheels) w.rotation.x = this.wheelSpin;
     for (const p of m.frontPivots) p.rotation.y = -this.steer * 0.45;
     this.flame.visible = this.boostTime > 0;

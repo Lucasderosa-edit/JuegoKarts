@@ -10,6 +10,7 @@ import { Hud } from '../ui/hud.js';
 import { formatTime } from '../ui/format.js';
 import { CHARACTERS, getCharacter, physicsStats } from '../kart/characters.js';
 import { AIDriver } from '../ai/aiDriver.js';
+import { resolveKartCollisions } from '../kart/collisions.js';
 
 const NO_INPUT = { throttle: 0, brake: 0, steer: 0, drift: false, item: false, itemPressed: false };
 
@@ -63,6 +64,13 @@ export class Race {
       this.ais.push(driver);
     });
 
+    // Eventos para el audio y los efectos
+    this.listeners = {};
+    this.track.onWallHit = (kart, strength, x, z) => {
+      this.sparks(x, z, Math.min(14, 3 + strength), '#ffe08a');
+      this.emit('wall', { kart, strength });
+    };
+
     this.state = 'countdown';
     this.countdown = CONFIG.race.countdownSeconds;
     this.raceTime = 0;
@@ -109,11 +117,30 @@ export class Race {
       if (racing) d.update(dt, d.controls);
       d.kart.update(dt, racing ? d.controls : NO_INPUT);
     }
+    resolveKartCollisions(this.karts, (a, b, strength, x, z) => {
+      if (strength > 0.15) this.sparks(x, z, Math.round(4 + strength * 10), '#ffffff');
+      this.emit('bump', { a, b, strength });
+    });
     for (const k of this.karts) {
       this.track.applyToKart(k);
       if (racing) this.handleProgress(k, k.progress.update(k.trackDistance, this.raceTime));
     }
     this.updateRanks();
+  }
+
+  on(type, fn) {
+    (this.listeners[type] ||= []).push(fn);
+  }
+
+  emit(type, data) {
+    for (const fn of this.listeners[type] || []) fn(data);
+  }
+
+  sparks(x, z, n, color) {
+    for (let i = 0; i < n; i++) {
+      this.particles.emit(x, 0.6, z, (Math.random() - 0.5) * 8, 2 + Math.random() * 4, (Math.random() - 0.5) * 8, color,
+        { life: 0.3 + Math.random() * 0.2, size: 0.14, gravity: 14, drag: 2 });
+    }
   }
 
   // Posiciones en tiempo real: los que terminaron por tiempo, el resto por distancia
