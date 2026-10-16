@@ -64,11 +64,35 @@ export class App {
     this.showMainMenu();
   }
 
+  // La resolución cambia en el momento; sombras y decoración, en la próxima carrera
   applyQuality() {
     const q = QUALITY_PRESETS[settings.quality] || QUALITY_PRESETS.media;
     this.quality = q;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, q.pixelRatio));
-    this.renderer.shadowMap.enabled = q.shadows;
+    this.dyn = { t: 0, frames: 0, scale: this.dyn?.scale ?? 1 };
+    if (!settings.dynamicResolution) this.dyn.scale = 1;
+    this.applyPixelRatio();
+    if (!this.race) this.renderer.shadowMap.enabled = q.shadows;
+  }
+
+  applyPixelRatio() {
+    const pr = Math.min(window.devicePixelRatio, this.quality.pixelRatio) * this.dyn.scale;
+    if (Math.abs(this.renderer.getPixelRatio() - pr) > 0.01) this.renderer.setPixelRatio(pr);
+  }
+
+  // Resolución dinámica: si los FPS bajan, se dibuja a menos resolución
+  updateDynamicResolution(dt) {
+    if (!settings.dynamicResolution || !this.race || this.paused) return;
+    const d = this.dyn;
+    d.t += dt;
+    d.frames++;
+    if (d.t < 2) return;
+    const fps = d.frames / d.t;
+    d.t = 0;
+    d.frames = 0;
+    if (fps < 45 && d.scale > 0.55) d.scale = Math.max(0.55, d.scale - 0.15);
+    else if (fps > 57 && d.scale < 1) d.scale = Math.min(1, d.scale + 0.1);
+    else return;
+    this.applyPixelRatio();
   }
 
   updateFpsLabel() {
@@ -148,6 +172,7 @@ export class App {
         controls: createControlState(),
         readInput: this.makeInputReader(config.players === 1 ? 'solo' : `p${i + 1}`, i),
       }));
+      this.renderer.shadowMap.enabled = this.quality.shadows;
       this.race = new Race({
         renderer: this.renderer,
         trackDef,
@@ -324,7 +349,11 @@ export class App {
       this.renderer.clear();
     }
     this.pollGamepadUI(dt);
-    if (settings.showFps) this.fpsLabel.textContent = `${this.loop.fps} FPS`;
+    this.updateDynamicResolution(dt);
+    if (settings.showFps) {
+      const info = this.renderer.info.render;
+      this.fpsLabel.textContent = `${this.loop.fps} FPS · ${Math.round(this.renderer.getPixelRatio() * 100)}% res · ${info.calls} dibujos`;
+    }
   }
 }
 

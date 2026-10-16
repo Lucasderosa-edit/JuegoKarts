@@ -170,6 +170,8 @@ export function optionsScreen({ onBack, inRace = false }) {
       <label class="option">Música <input type="range" min="0" max="1" step="0.05" data-k="musicVolume"></label>
       <label class="option">Efectos de sonido <input type="range" min="0" max="1" step="0.05" data-k="sfxVolume"></label>
       <div class="option">Calidad gráfica <div class="segmented" data-quality></div></div>
+      <div class="hint" style="text-align:left;margin:0">Baja: sin sombras y menos decoración (celulares). Las sombras y la decoración cambian en la próxima carrera.</div>
+      <label class="option">Resolución automática (si va lento) <input type="checkbox" data-k="dynamicResolution"></label>
       <label class="option">Acelerar solo (pantalla táctil) <input type="checkbox" data-k="autoAccelerate"></label>
       <label class="option">Mostrar FPS <input type="checkbox" data-k="showFps"></label>
       <div class="row-buttons"></div>

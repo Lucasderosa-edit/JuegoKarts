@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { bake } from '../core/bake.js';
 
 // Construye los meshes de la pista a partir de un TrackPath.
 // Todo con colores planos por vértice, en pocas mallas (rápido de dibujar).
@@ -159,7 +160,7 @@ function buildStartLine(path, theme, shadows) {
       g.add(m);
     }
   }
-  return g;
+  return bake(g);
 }
 
 // Une varias geometrías no indexadas con los mismos atributos.

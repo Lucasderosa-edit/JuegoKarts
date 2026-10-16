@@ -7,6 +7,7 @@ const defaults = {
   musicVolume: 0.6,
   sfxVolume: 0.8,
   showFps: false,
+  dynamicResolution: true,
   autoAccelerate: false,
 };
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { flatMat } from '../kart/kartModel.js';
+import { bake } from '../core/bake.js';
 
 // Obstáculos propios de cada pista: cangrejos, olas, conos, colectivo,
 // bolas de nieve y placas de hielo.
@@ -330,7 +331,7 @@ function crabMesh() {
       g.add(leg);
     }
   }
-  return g;
+  return bake(g);
 }
 
 function coneMesh() {
@@ -344,7 +345,7 @@ function coneMesh() {
   const stripe = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.27, 0.18, 8), new THREE.MeshBasicMaterial({ color: '#ffffff' }));
   stripe.position.y = 0.72;
   g.add(stripe);
-  return g;
+  return bake(g);
 }
 
 function busMesh() {
@@ -384,5 +385,5 @@ function busMesh() {
   }
   g.add(warn);
   g.userData.warn = warn;
-  return g;
+  return bake(g, (o) => o === warn);
 }

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { buildKartModel, flatMat } from './kartModel.js';
 import { buildDriver } from './characterModels.js';
+import { bake } from '../core/bake.js';
 
 const tmpFwd = new THREE.Vector2();
 const tmpRight = new THREE.Vector2();
@@ -71,6 +72,15 @@ export class Kart {
     flame.visible = false;
     this.model.chassis.add(flame);
     this.flame = flame;
+
+    // Unir las piezas fijas para dibujar más rápido
+    const slot = this.model.driverSlot;
+    bake(this.model.chassis, (o) => o === slot || o === flame);
+    if (this.driver) {
+      const d = this.driver;
+      bake(d.root, (o) => o === d.head || o.userData.flutter);
+      bake(d.head);
+    }
   }
 
   get forward() {

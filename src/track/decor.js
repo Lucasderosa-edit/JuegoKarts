@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { bake } from '../core/bake.js';
 
 // Decoración de cada pista (árboles, rocas, colinas, nubes...).
 // Se usan InstancedMesh para dibujar cientos de objetos de una vez.
@@ -160,7 +161,7 @@ export function addGrandstand(group, path, { side = 1, colors, offset = 6, shado
   }
   const pm = instanced(new THREE.BoxGeometry(0.9, 1.1, 0.9), people);
   if (pm) g.add(pm);
-  group.add(g);
+  group.add(bake(g));
 }
 
 // --- Pradera ---
@@ -273,7 +274,7 @@ DECOR_BUILDERS.beach = (path, theme, quality, def) => {
     h.position.set(p.x, 0, p.z);
     h.rotation.y = rand() * 6;
     h.traverse((o) => { o.castShadow = shadows; });
-    group.add(h);
+    group.add(bake(h));
   }
   const rocks = scatter(path, rand, Math.round(30 * density), { minDist: path.wallOffset + 3, maxDist: 100 });
   const rm = instanced(new THREE.DodecahedronGeometry(1, 0), rocks.map((p) => ({ x: p.x, y: 0.3, z: p.z, s: 0.8 + rand() * 1.8, ry: rand() * 6, color: '#b9a88f' })), { shadows });
