@@ -12,7 +12,7 @@ export class Hud {
         <div class="hud-time" data-time>0:00.00</div>
         <div class="hud-laps" data-lap-list></div>
       </div>
-      <div class="hud-top-right"></div>
+      <div class="hud-top-right"><div class="hud-pos" data-pos>8.º<small>/8</small></div></div>
       <div class="hud-warn" data-warn>¡CONTRAMANO!</div>
       <div class="hud-center"><div data-center></div></div>`;
     parent.appendChild(this.el);
@@ -23,7 +23,9 @@ export class Hud {
     this.lapListEl = this.q('[data-lap-list]');
     this.centerEl = this.q('[data-center]');
     this.warnEl = this.q('[data-warn]');
+    this.posEl = this.q('[data-pos]');
     this._lastLapCount = -1;
+    this._lastPos = '';
   }
 
   showCountdown(text, go = false) {
@@ -34,7 +36,13 @@ export class Hud {
     this.centerEl.innerHTML = `<div class="hud-msg pop">${text}</div>`;
   }
 
-  update({ progress, raceTime }) {
+  update({ progress, raceTime, rank, total }) {
+    const posText = `${rank}.º<small>/${total}</small>`;
+    if (posText !== this._lastPos) {
+      this._lastPos = posText;
+      this.posEl.innerHTML = posText;
+      this.posEl.classList.toggle('p1', rank === 1);
+    }
     this.lapEl.textContent = Math.max(1, progress.lap);
     this.lapsEl.textContent = progress.laps;
     this.timeEl.textContent = formatTime(progress.finished ? progress.finishTime : raceTime);

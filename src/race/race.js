@@ -81,6 +81,7 @@ export class Race {
     kart.progress.update(kart.trackDistance, 0);
     this.scene.add(kart.object);
     this.karts.push(kart);
+    kart.rank = this.karts.length;
     return kart;
   }
 
@@ -112,6 +113,34 @@ export class Race {
       this.track.applyToKart(k);
       if (racing) this.handleProgress(k, k.progress.update(k.trackDistance, this.raceTime));
     }
+    this.updateRanks();
+  }
+
+  // Posiciones en tiempo real: los que terminaron por tiempo, el resto por distancia
+  updateRanks() {
+    const sorted = [...this.karts].sort((a, b) => {
+      const pa = a.progress, pb = b.progress;
+      if (pa.finished && pb.finished) return pa.finishTime - pb.finishTime;
+      if (pa.finished) return -1;
+      if (pb.finished) return 1;
+      return pb.raceDistance - pa.raceDistance;
+    });
+    sorted.forEach((k, i) => { k.rank = i + 1; });
+    this.ranking = sorted;
+  }
+
+  // Resultados finales (los que no llegaron reciben un tiempo estimado)
+  getResults() {
+    const total = this.track.path.length * CONFIG.race.laps;
+    const rows = this.karts.map((k) => {
+      const p = k.progress;
+      if (p.finished) return { kart: k, time: p.finishTime, estimated: false };
+      const done = Math.max(1, p.raceDistance);
+      const avg = Math.max(12, done / Math.max(1, this.raceTime));
+      return { kart: k, time: this.raceTime + (total - done) / avg, estimated: true };
+    });
+    rows.sort((a, b) => a.time - b.time);
+    return rows.map((r, i) => ({ ...r, position: i + 1 }));
   }
 
   updateCountdown(dt) {
@@ -185,7 +214,7 @@ export class Race {
     pl.camera.updateProjectionMatrix();
     this.env.follow(pl.kart.position);
     r.render(this.scene, pl.camera);
-    for (const p of this.players) p.hud.update({ progress: p.kart.progress, raceTime: Math.max(0, this.raceTime) });
+    for (const p of this.players) p.hud.update({ progress: p.kart.progress, raceTime: Math.max(0, this.raceTime), rank: p.kart.rank || this.karts.length, total: this.karts.length });
   }
 
   dispose() {

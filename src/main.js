@@ -5,6 +5,8 @@ import { KEY_BINDINGS, createControlState, readKeyboard, endInputFrame } from '.
 import { QUALITY_PRESETS, defaultQualityId } from './core/quality.js';
 import { Race } from './race/race.js';
 import pradera from './track/tracks/pradera.js';
+import { showResults } from './ui/results.js';
+import { formatTime } from './ui/format.js';
 
 const container = document.getElementById('game');
 const ui = document.getElementById('ui');
@@ -13,7 +15,14 @@ const quality = QUALITY_PRESETS[defaultQualityId()];
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio));
 renderer.shadowMap.enabled = quality.shadows;
 
-const race = new Race({
+let race;
+let results = null;
+
+function startRace() {
+  results?.close();
+  results = null;
+  if (race) race.dispose();
+  race = new Race({
   renderer,
   trackDef: pradera,
   quality,
@@ -23,7 +32,22 @@ const race = new Race({
     controls: createControlState(),
     readInput: (c) => readKeyboard(KEY_BINDINGS.solo, c),
   }],
-});
+  });
+  race.onFinish = () => setTimeout(() => showRaceResults(race), 2500);
+}
+
+function showRaceResults(r) {
+  if (r !== race || results) return;
+  const rows = r.getResults();
+  const me = rows.find((x) => x.kart.isPlayer);
+  results = showResults(ui, {
+    title: me.position === 1 ? '¡GANASTE!' : `Llegaste ${me.position}.º`,
+    subtitle: `${r.track.def.name} · Mejor vuelta ${formatTime(Math.min(...me.kart.progress.lapTimes))}`,
+    rows: rows.map((x) => ({ position: x.position, name: x.kart.name, color: x.kart.character.kart.body, time: x.time, estimated: x.estimated, me: x.kart.isPlayer })),
+    buttons: [{ label: 'Correr de nuevo', onClick: startRace }],
+  });
+}
+startRace();
 
 const fpsLabel = document.createElement('div');
 fpsLabel.className = 'debug-fps';
@@ -45,4 +69,4 @@ const loop = new GameLoop({
 loop.start();
 
 // Acceso para pruebas automáticas
-window.__game = { loop, race, get kart() { return race.players[0].kart; } };
+window.__game = { loop, get race() { return race; }, get kart() { return race.players[0].kart; }, startRace };
