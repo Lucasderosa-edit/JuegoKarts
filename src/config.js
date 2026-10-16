@@ -23,6 +23,27 @@ export const CONFIG = {
     radius: 1.1,           // radio para colisiones (m)
   },
 
+  // Derrape (mantener Espacio mientras se dobla)
+  drift: {
+    minSpeed: 11,          // velocidad mínima para empezar a derrapar (m/s)
+    grip: 5,               // qué tan rápido se acomoda el deslizamiento lateral
+    slideAngle: 0.22,      // ángulo con el que el kart se desliza hacia afuera (radianes)
+    baseTurn: 0.62,        // giro mínimo hacia el lado del derrape (fracción de turnRate)
+    steerRange: 0.36,      // cuánto se puede abrir o cerrar el derrape con la dirección
+    visualAngle: 0.38,     // cuánto se cruza el kart (solo visual, en radianes)
+    hop: 4.5,              // saltito al empezar el derrape
+    chargeTight: 0.8,      // carga extra al cerrar el derrape
+    levels: [0.8, 1.7, 2.7],          // segundos de derrape para cada nivel de turbo
+    boostDuration: [0.55, 1.0, 1.6],  // segundos de turbo según el nivel
+    sparkColors: ['#ffffff', '#ffd23f', '#3dff7a'], // chispas: blanco → amarillo → verde
+  },
+
+  // Turbo (derrape, ítem turbo, etc.)
+  boost: {
+    speedMultiplier: 1.32, // velocidad máxima durante el turbo
+    extraAccel: 32,        // aceleración extra durante el turbo
+  },
+
   // Cámara en tercera persona
   camera: {
     fov: 70,

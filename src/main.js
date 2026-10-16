@@ -5,6 +5,7 @@ import { createRenderer } from './core/renderer.js';
 import { KEY_BINDINGS, createControlState, readKeyboard, endInputFrame } from './core/input.js';
 import { Kart } from './kart/kart.js';
 import { ChaseCamera } from './kart/chaseCamera.js';
+import { Particles } from './fx/particles.js';
 
 const container = document.getElementById('game');
 const ui = document.getElementById('ui');
@@ -38,7 +39,8 @@ const grid = new THREE.GridHelper(400, 80, '#4e9a33', '#5aae3c');
 grid.position.y = 0.01;
 scene.add(grid);
 
-const kart = new Kart({ colors: { body: '#ffcc33', accent: '#e8483b' } });
+const particles = new Particles(scene);
+const kart = new Kart({ colors: { body: '#ffcc33', accent: '#e8483b' }, particles });
 scene.add(kart.object);
 kart.setPose(0, 0, 0);
 
@@ -60,12 +62,15 @@ const loop = new GameLoop({
     endInputFrame();
   },
   render(frameDt) {
+    kart.syncObject();
+    particles.update(frameDt);
     chase.update(kart, frameDt);
     // La luz del sol acompaña al kart para que siempre tenga sombra
     sun.position.set(kart.position.x + 30, 50, kart.position.z + 20);
     sun.target.position.copy(kart.position);
     renderer.render(scene, camera);
-    fpsLabel.textContent = `${loop.fps} FPS · ${Math.round(Math.abs(kart.speed) * 3.6)} km/h`;
+    fpsLabel.textContent = `${loop.fps} FPS · ${Math.round(Math.abs(kart.speed) * 3.6)} km/h`
+      + (kart.drifting ? ` · derrape nivel ${kart.driftLevel}` : '') + (kart.isBoosting ? ' · TURBO' : '');
   },
 });
 loop.start();
