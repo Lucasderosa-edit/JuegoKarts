@@ -33,6 +33,9 @@ export class Kart {
     // Turbo
     this.boostTime = 0;
 
+    // Multiplicador de velocidad (dificultad de los rivales)
+    this.speedFactor = 1;
+
     // Superficie actual (la pista la actualiza: pasto, hielo, etc.)
     this.surface = { speed: 1, grip: 1, offroad: false };
 
@@ -96,10 +99,10 @@ export class Kart {
     const boosting = this.boostTime > 0;
     if (boosting) this.boostTime = Math.max(0, this.boostTime - dt);
 
-    let maxSpeed = s.maxSpeed * this.surface.speed;
+    let maxSpeed = s.maxSpeed * this.surface.speed * this.speedFactor;
     let accelBase = s.acceleration;
     if (boosting) {
-      maxSpeed = s.maxSpeed * CONFIG.boost.speedMultiplier * Math.max(this.surface.speed, 0.85);
+      maxSpeed = s.maxSpeed * this.speedFactor * CONFIG.boost.speedMultiplier * Math.max(this.surface.speed, 0.85);
       accelBase += CONFIG.boost.extraAccel;
     }
 

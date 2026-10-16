@@ -23,6 +23,34 @@ export const CONFIG = {
     radius: 1.1,           // radio para colisiones (m)
   },
 
+  // Cómo se traducen los stats de cada personaje (1 a 5) a la física:
+  // valor = base + puntos × perPoint
+  characterStats: {
+    maxSpeed: { base: 28.4, perPoint: 0.6 },       // m/s
+    acceleration: { base: 11.5, perPoint: 2 },   // m/s²
+    turnRate: { base: 1.95, perPoint: 0.12 },    // rad/s
+    grip: { base: 7.5, perPoint: 0.6 },
+    driftHandling: { base: 0.9, perPoint: 0.04 },
+    mass: { base: 0.8, perPoint: 0.12 },         // para los choques
+  },
+
+  // Rivales manejados por la computadora
+  ai: {
+    count: 7,
+    skillMin: 0.92,        // multiplicador de velocidad del rival más lento
+    skillMax: 0.985,        // ... y del más rápido
+    lookAheadBase: 9,      // metros adelante que mira para doblar
+    lookAheadPerSpeed: 0.45,
+    steerGain: 2.6,
+    laneWidth: 0.55,       // qué tanto usan el ancho de la pista (0-1)
+    driftCurvature: 0.022, // curvatura a partir de la cual derrapan
+    driftChance: 0.75,     // probabilidad de aprovechar una curva para derrapar
+    // Para que la carrera sea pareja: si un rival va muy adelante del
+    // jugador afloja un poco, y si va muy atrás acelera un poco.
+    rubberBand: { aheadDistance: 70, behindDistance: 90, slowdown: 0.92, speedup: 1.07 },
+    stuckRespawnSeconds: 3,
+  },
+
   // Derrape (mantener Espacio mientras se dobla)
   drift: {
     minSpeed: 11,          // velocidad mínima para empezar a derrapar (m/s)
@@ -51,6 +79,7 @@ export const CONFIG = {
     countdownSeconds: 3,
     startBoostWindow: 0.55, // acelerar justo antes del ¡YA! da un turbo de largada
     startBoostDuration: 0.9,
+    playerGridSlot: 7,     // el jugador larga último (0 = primero)
   },
 
   // Pista

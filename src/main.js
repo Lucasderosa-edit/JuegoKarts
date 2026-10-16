@@ -19,8 +19,7 @@ const race = new Race({
   quality,
   uiRoot: ui,
   players: [{
-    name: 'Jugador',
-    colors: { body: '#ffcc33', accent: '#e8483b' },
+    characterId: 'chispa',
     controls: createControlState(),
     readInput: (c) => readKeyboard(KEY_BINDINGS.solo, c),
   }],
