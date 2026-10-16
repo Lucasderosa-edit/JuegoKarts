@@ -1,0 +1,16 @@
+.touch-controls { position: absolute; inset: 0; pointer-events: none; touch-action: none; }
+.tc-btn { position: absolute; pointer-events: auto; touch-action: none; border-radius: 50%; border: 3px solid rgba(255,255,255,.7);
+  background: rgba(20,22,48,.42); color: #fff; font: 900 15px "Trebuchet MS", sans-serif; display: flex; align-items: center; justify-content: center;
+  text-shadow: 0 2px 0 rgba(0,0,0,.4); user-select: none; -webkit-user-select: none; }
+.tc-btn.on { background: rgba(255,210,63,.55); border-color: #ffd23f; transform: scale(.94); }
+.tc-btn svg { width: 46%; height: 46%; fill: #fff; }
+.tc-left { left: max(14px, env(safe-area-inset-left)); bottom: max(18px, env(safe-area-inset-bottom)); width: 86px; height: 86px; }
+.tc-right { left: calc(max(14px, env(safe-area-inset-left)) + 100px); bottom: max(18px, env(safe-area-inset-bottom)); width: 86px; height: 86px; }
+.tc-gas { right: max(14px, env(safe-area-inset-right)); bottom: max(18px, env(safe-area-inset-bottom)); width: 96px; height: 96px; }
+.tc-brake { right: calc(max(14px, env(safe-area-inset-right)) + 108px); bottom: max(14px, env(safe-area-inset-bottom)); width: 66px; height: 66px; font-size: 13px; }
+.tc-drift { right: max(14px, env(safe-area-inset-right)); bottom: calc(max(18px, env(safe-area-inset-bottom)) + 108px); width: 76px; height: 76px; font-size: 13px; }
+.tc-item { right: calc(max(14px, env(safe-area-inset-right)) + 92px); bottom: calc(max(18px, env(safe-area-inset-bottom)) + 84px); width: 66px; height: 66px; font-size: 13px; }
+.tc-pause { left: 50%; transform: translateX(-50%); top: calc(max(12px, env(safe-area-inset-top)) + 100px); width: 46px; height: 46px; border-radius: 12px; font-size: 18px; }
+.tc-pause.on { transform: translateX(-50%) scale(.94); }
+body.touch .hud-speed { display: none; }
+body.touch .hud-map { top: calc(max(14px, env(safe-area-inset-top)) + 112px); bottom: auto; width: 100px; height: 100px; }

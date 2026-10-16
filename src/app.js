@@ -12,6 +12,8 @@ import { formatTime } from './ui/format.js';
 import * as screens from './ui/screens.js';
 import { AudioEngine } from './audio/audio.js';
 import { attachRaceAudio } from './audio/raceAudio.js';
+import { getPads, readGamepad, readMenuPad, padJustPressed } from './core/gamepad.js';
+import { TouchControls, isTouchDevice } from './ui/touchControls.js';
 
 // Controla el flujo del juego: menús, carrera, pausa y resultados.
 export class App {
@@ -155,6 +157,10 @@ export class App {
       });
       this.race.onFinish = (race) => setTimeout(() => this.showRaceResults(race), 2500);
       this.raceAudio = attachRaceAudio(this.race, this.audio);
+      if (config.players === 1 && isTouchDevice()) {
+        this.touch = new TouchControls(this.hudLayer, { onPause: () => this.pause() });
+        document.body.classList.add('touch');
+      }
       this.audio.playMusic(trackDef.id);
       this.audio.setMusicTempo(1);
       this.onRaceCreated?.(this.race);
@@ -163,8 +169,15 @@ export class App {
     });
   }
 
-  makeInputReader(binding) {
-    return (c) => readKeyboard(KEY_BINDINGS[binding], c);
+  // Cada jugador combina teclado, joystick y (en 1 jugador) botones táctiles
+  makeInputReader(binding, index) {
+    return (c) => {
+      readKeyboard(KEY_BINDINGS[binding], c);
+      const pads = getPads();
+      if (binding === 'solo') for (const pad of pads) readGamepad(pad, c);
+      else readGamepad(pads[index], c);
+      if (binding === 'solo' && this.touch) this.touch.read(c);
+    };
   }
 
   endRace() {
@@ -172,6 +185,9 @@ export class App {
     this.results = null;
     this.raceAudio?.dispose();
     this.raceAudio = null;
+    this.touch?.dispose();
+    this.touch = null;
+    document.body.classList.remove('touch');
     if (this.race) {
       this.onRaceEnded?.(this.race);
       this.race.dispose();
@@ -259,6 +275,32 @@ export class App {
     }
   }
 
+  // Joystick en los menús y botón Start para pausar
+  pollGamepadUI(dt) {
+    if (!getPads().length) return;
+    const nav = readMenuPad(dt);
+    const inRace = this.race && !this.results;
+    if (nav.start && inRace) { if (this.paused) this.resume(); else this.pause(); return; }
+    if (!(this.screen || this.results)) return;
+    const root = this.results ? this.results.el : this.screen;
+    if (nav.move) {
+      const items = [...root.querySelectorAll('button:not([disabled])')];
+      if (items.length) {
+        const i = items.indexOf(document.activeElement);
+        items[(i + nav.move + items.length) % items.length].focus();
+      }
+    }
+    if (nav.accept) {
+      const f = document.activeElement;
+      if (f && root.contains(f) && f.tagName === 'BUTTON') f.click();
+      else root.querySelector('button:not([disabled])')?.focus();
+    }
+    if (nav.back) {
+      if (inRace && this.paused) this.resume();
+      else if (this.menuBack && !this.race) this.menuBack();
+    }
+  }
+
   // --- Loop ---
   update(dt) {
     if (this.race && !this.paused) this.race.update(dt);
@@ -272,8 +314,9 @@ export class App {
     } else {
       this.renderer.clear();
     }
+    this.pollGamepadUI(dt);
     if (settings.showFps) this.fpsLabel.textContent = `${this.loop.fps} FPS`;
   }
 }
 
-export { wasPressed, getCharacter };
+export { wasPressed, getCharacter, padJustPressed };

@@ -76,3 +76,32 @@
 .fade.on { opacity: 1; }
 
 .loading { font: 900 26px var(--font); text-shadow: 0 3px 0 var(--ink); }
+
+/* Pantallas bajas (celular en horizontal) */
+.screen { overflow-y: auto; }
+@media (max-height: 560px) {
+  .screen { justify-content: flex-start; padding-top: max(10px, env(safe-area-inset-top)); }
+  .screen > *:first-child:not(.menu-bg), .screen > .menu-bg + * { margin-top: auto; }
+  .screen > *:last-child { margin-bottom: auto; }
+  .logo { font-size: clamp(34px, 9vh, 64px); margin-bottom: 2px; }
+  .tagline { margin-bottom: 10px; }
+  .menu-list { gap: 7px; width: min(300px, 100%); }
+  .menu-list .btn { font-size: 17px; padding: 9px 16px; }
+  .screen h1 { font-size: 24px; }
+  .screen .hint { margin-bottom: 6px; }
+  .cards { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .card { padding: 6px; border-radius: 12px; }
+  .card .media { aspect-ratio: 4 / 3; }
+  .card h3 { font-size: 16px; margin-top: 4px; }
+  .card p, .card .stats, .card .species { display: none; }
+  .card .best { font-size: 11px; }
+  .row-buttons { margin-top: 8px; }
+  .row-buttons .btn { padding: 8px 16px; font-size: 16px; }
+  .panel { padding: 12px 16px; }
+  .panel h2 { font-size: 22px; margin-bottom: 6px; }
+  .option { padding: 6px 0; }
+  .results-card { padding: 10px 14px; }
+  .results h2 { font-size: 22px; }
+  .results td { padding: 3px 6px; font-size: 14px; }
+  .results-media video { width: min(220px, 100%); }
+}
