@@ -56,3 +56,9 @@
 .hud.split .hud-speed { transform: scale(.75); transform-origin: bottom right; } .hud.split .hud-map { width: 96px; height: 96px; }
 .hud.split .hud-center { top: 22%; } .hud.split .hud-count { font-size: 90px; } .hud.split .hud-msg { font-size: 30px; }
 .hud.split .hud-warn { top: 12%; font-size: 22px; }
+.hud-speedlines { position: absolute; inset: 0; opacity: 0; transition: opacity .2s; pointer-events: none; overflow: hidden;
+  background: repeating-conic-gradient(from 0deg at 50% 52%, rgba(255,255,255,.0) 0deg 5deg, rgba(255,255,255,.22) 5.4deg 5.8deg, rgba(255,255,255,0) 6.2deg 11deg);
+  -webkit-mask: radial-gradient(ellipse at 50% 52%, transparent 38%, #000 75%); mask: radial-gradient(ellipse at 50% 52%, transparent 38%, #000 75%);
+  animation: lines .25s linear infinite; }
+@keyframes lines { from { transform: rotate(0deg) scale(1.15); } to { transform: rotate(3deg) scale(1.15); } }
+.hud-record { color: #3dff7a; font-weight: 900; }

@@ -14,6 +14,7 @@ import { AudioEngine } from './audio/audio.js';
 import { attachRaceAudio } from './audio/raceAudio.js';
 import { getPads, readGamepad, readMenuPad, padJustPressed } from './core/gamepad.js';
 import { TouchControls, isTouchDevice } from './ui/touchControls.js';
+import { getRecords, submitRecord } from './core/records.js';
 
 // Controla el flujo del juego: menús, carrera, pausa y resultados.
 export class App {
@@ -127,7 +128,7 @@ export class App {
   chooseTrack(config) {
     this.audio.playMusic('menu');
     this.setScreen(screens.trackSelect({
-      bestTimes: this.bestTimes?.() || {},
+      bestTimes: getRecords(),
       onPick: (trackId) => this.startRace({ ...config, trackId }),
       onBack: () => this.chooseCharacters(config.players),
     }));
@@ -211,9 +212,17 @@ export class App {
     if (solo) title = best.position === 1 ? '¡GANASTE!' : `Llegaste ${best.position}.º`;
     else title = `¡Ganó el Jugador ${humans.indexOf(best.kart) + 1}!`;
     const bestLap = Math.min(...humans.flatMap((k) => k.progress.lapTimes));
+    // Guardar récords (tiempo total y mejor vuelta)
+    let newRecord = { total: false, lap: false };
+    for (const k of humans) {
+      if (!k.progress.finished) continue;
+      const r = submitRecord(race.track.def.id, { total: k.progress.finishTime, lap: Math.min(...k.progress.lapTimes), character: k.name });
+      newRecord = { total: newRecord.total || r.total, lap: newRecord.lap || r.lap };
+    }
+    const recordText = newRecord.total ? ' · <span class="hud-record">¡NUEVO RÉCORD!</span>' : (newRecord.lap ? ' · <span class="hud-record">¡Récord de vuelta!</span>' : '');
     this.results = showResults(this.screenLayer, {
       title,
-      subtitle: `${race.track.def.name} · Mejor vuelta ${formatTime(bestLap)}`,
+      subtitle: `${race.track.def.name} · Mejor vuelta ${formatTime(bestLap)}${recordText}`,
       media,
       rows: rows.map((x) => ({
         position: x.position, name: x.kart.name, color: x.kart.character.kart.body, time: x.time, estimated: x.estimated,

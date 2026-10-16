@@ -15,6 +15,7 @@ export class Hud {
       this.el.dataset.player = `J${split.index + 1}`;
     }
     this.el.innerHTML = `
+      <div class="hud-speedlines" data-lines></div>
       <div class="hud-top-left">
         <div class="hud-lap">VUELTA <span data-lap>1</span><small>/<span data-laps>3</span></small></div>
         <div class="hud-time" data-time>0:00.00</div>
@@ -41,6 +42,8 @@ export class Hud {
     this.centerEl = this.q('[data-center]');
     this.warnEl = this.q('[data-warn]');
     this.posEl = this.q('[data-pos]');
+    this.linesEl = this.q('[data-lines]');
+    this._lines = 0;
     this.speedEl = this.q('[data-speed]');
     this.speedArc = this.q('[data-speed-arc]');
     this.arcLen = this.speedArc.getTotalLength?.() || 260;
@@ -84,6 +87,15 @@ export class Hud {
     // El jugador se dibuja arriba de todos
     const order = this.mapDots.map((c, i) => [c, karts[i] === me]).sort((a, b) => a[1] - b[1]);
     for (const [c] of order) this.mapEl.appendChild(c);
+  }
+
+  // Líneas de velocidad en los bordes de la pantalla
+  setSpeedLines(amount) {
+    const a = Math.round(Math.min(1, amount) * 20) / 20;
+    if (a !== this._lines) {
+      this._lines = a;
+      this.linesEl.style.opacity = a;
+    }
   }
 
   showCountdown(text, go = false) {

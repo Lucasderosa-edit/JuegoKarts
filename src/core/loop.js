@@ -32,6 +32,8 @@ export class GameLoop {
     this.last = now;
     // Si la pestaña estuvo en segundo plano, no intentar "alcanzar" el tiempo perdido.
     if (frameTime > 0.25) frameTime = 0.25;
+    // El tiempo del cuadro puede ser anterior a start() si hubo una tarea larga
+    if (frameTime < 0) frameTime = 0;
 
     this.accumulator += frameTime;
     let steps = 0;

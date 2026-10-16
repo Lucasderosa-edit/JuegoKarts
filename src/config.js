@@ -127,5 +127,8 @@ export const CONFIG = {
     lookAhead: 4,       // a qué distancia adelante del kart mira
     lookHeight: 1.0,
     followSharpness: 6, // más alto = sigue más pegada
+    speedFov: 8,        // grados extra de campo visual a toda velocidad
+    boostFov: 9,        // grados extra durante el turbo
+    introSeconds: 2.6,  // giro de cámara alrededor del kart en la cuenta regresiva
   },
 };

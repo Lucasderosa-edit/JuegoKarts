@@ -77,8 +77,16 @@ export class Race {
     this.items = new ItemManager(this);
     for (const d of this.ais) d.items = this.items;
 
+    // Sacudida de cámara cuando golpean al jugador
+    this.on('hit', ({ kart }) => this.players.find((p) => p.kart === kart)?.chase.addShake(0.6));
+    this.on('bump', ({ a, b, strength }) => {
+      for (const p of this.players) if (p.kart === a || p.kart === b) p.chase.addShake(strength * 0.35);
+    });
+    this.on('wall', ({ kart, strength }) => this.players.find((p) => p.kart === kart)?.chase.addShake(Math.min(0.4, strength / 30)));
+    this.on('obstacle', ({ kart }) => this.players.find((p) => p.kart === kart)?.chase.addShake(0.4));
+
     this.state = 'countdown';
-    this.countdown = CONFIG.race.countdownSeconds;
+    this.countdown = CONFIG.race.countdownSeconds + 0.6;
     this.raceTime = 0;
     this.time = 0;
     this._lastCount = null;
@@ -149,6 +157,15 @@ export class Race {
     for (const fn of this.listeners[type] || []) fn(data);
   }
 
+  confetti(kart) {
+    const colors = ['#ffd23f', '#ff5d8f', '#3dd6ff', '#7bff6b', '#b46bff', '#ffffff'];
+    for (let i = 0; i < 70; i++) {
+      this.particles.emit(kart.position.x + (Math.random() - 0.5) * 3, 3 + Math.random() * 2, kart.position.z + (Math.random() - 0.5) * 3,
+        (Math.random() - 0.5) * 10 + kart.velocity.x * 0.6, 5 + Math.random() * 6, (Math.random() - 0.5) * 10 + kart.velocity.y * 0.6,
+        colors[i % colors.length], { life: 1.6 + Math.random(), size: 0.2, gravity: 6, drag: 1.5 });
+    }
+  }
+
   burst(x, y, z, colors, n) {
     for (let i = 0; i < n; i++) {
       this.particles.emit(x, y, z, (Math.random() - 0.5) * 9, 1 + Math.random() * 5, (Math.random() - 0.5) * 9,
@@ -194,7 +211,7 @@ export class Race {
     const prev = this.countdown;
     this.countdown -= dt;
     const shown = Math.ceil(this.countdown);
-    if (shown !== this._lastCount && shown > 0) {
+    if (shown !== this._lastCount && shown > 0 && shown <= CONFIG.race.countdownSeconds) {
       this._lastCount = shown;
       for (const pl of this.players) pl.hud.showCountdown(shown);
       this.emit('countdown', { n: shown });
@@ -241,6 +258,7 @@ export class Race {
     if (event === 'finish') {
       if (pl) {
         pl.hud.showMessage('¡LLEGADA!');
+        if (kart.rank <= 3) this.confetti(kart);
         // Al terminar, la computadora sigue manejando el kart del jugador
         pl.autopilot = new AIDriver(kart, this.track, { seed: 5 });
         pl.autopilot.items = this.items;
@@ -266,9 +284,13 @@ export class Race {
     r.setScissorTest(n > 1);
     this.players.forEach((pl, i) => {
       const v = views[i];
+      pl.chase.intro = this.state === 'countdown' ? Math.min(1, Math.max(0, (this.countdown - (CONFIG.race.countdownSeconds - CONFIG.camera.introSeconds)) / CONFIG.camera.introSeconds)) : 0;
+      if (pl.camera.aspect !== v.w / v.h) {
+        pl.camera.aspect = v.w / v.h;
+        pl.camera.updateProjectionMatrix();
+      }
       pl.chase.update(pl.kart, frameDt);
-      pl.camera.aspect = v.w / v.h;
-      pl.camera.updateProjectionMatrix();
+      pl.hud.setSpeedLines(pl.kart.boostTime > 0 ? 1 : Math.max(0, (pl.kart.speed - 28) / 10));
       this.env.follow(pl.kart.position);
       this.track.animate(i === 0 ? frameDt : 0, pl.kart.position);
       if (n > 1) {
