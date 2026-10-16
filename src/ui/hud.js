@@ -4,9 +4,16 @@ import { ITEM_TYPES, ITEM_IDS } from '../items/itemTypes.js';
 
 // HUD de un jugador (en pantalla dividida hay uno por mitad).
 export class Hud {
-  constructor(parent) {
+  constructor(parent, split = null) {
     this.el = document.createElement('div');
     this.el.className = 'hud';
+    if (split) {
+      // Pantalla dividida: cada HUD ocupa su mitad
+      this.el.classList.add('split');
+      this.el.style.top = split.index === 0 ? '0' : '50%';
+      this.el.style.bottom = split.index === 0 ? '50%' : '0';
+      this.el.dataset.player = `J${split.index + 1}`;
+    }
     this.el.innerHTML = `
       <div class="hud-top-left">
         <div class="hud-lap">VUELTA <span data-lap>1</span><small>/<span data-laps>3</span></small></div>

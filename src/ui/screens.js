@@ -69,22 +69,24 @@ function hookCardVideo(card) {
 
 function selectable(container, cards, onConfirm) {
   let selected = null;
-  const select = (card) => {
+  let soft = false; // seleccionada solo por el foco automático (no por el jugador)
+  const select = (card, isSoft = false) => {
     if (selected && selected !== card) { selected.classList.remove('selected'); selected._stop?.(); }
     selected = card;
+    soft = isSoft;
     card.classList.add('selected');
     card._play?.();
   };
   for (const card of cards) {
     // Primer clic: elige y muestra el video. Segundo clic (o Enter): confirma.
-    card.addEventListener('pointerdown', () => { card._wasSelected = selected === card; });
+    card.addEventListener('pointerdown', () => { card._wasSelected = selected === card && !soft; });
     card.addEventListener('click', (e) => {
       const confirm = e.detail === 0 ? selected === card : card._wasSelected;
       card._wasSelected = false;
       if (confirm) onConfirm(card.dataset.id);
       else select(card);
     });
-    card.addEventListener('focus', () => select(card));
+    card.addEventListener('focus', () => select(card, !!card._autoFocus));
     card.addEventListener('dblclick', () => onConfirm(card.dataset.id));
   }
   return { get selected() { return selected; }, select };
@@ -118,8 +120,15 @@ export function characterSelect({ title, hint, taken = [], onPick, onBack }) {
     button('Volver', onBack, 'secondary'),
     button('¡Elegir!', () => sel.selected && onPick(sel.selected.dataset.id)),
   );
-  s.focusFirst = () => cards[0]?.focus();
+  s.focusFirst = () => autoFocus(cards[0]);
   return s;
+}
+
+function autoFocus(card) {
+  if (!card) return;
+  card._autoFocus = true;
+  card.focus();
+  card._autoFocus = false;
 }
 
 export function trackSelect({ onPick, onBack, bestTimes = {} }) {
@@ -150,7 +159,7 @@ export function trackSelect({ onPick, onBack, bestTimes = {} }) {
     button('Volver', onBack, 'secondary'),
     button('¡A correr!', () => sel.selected && onPick(sel.selected.dataset.id)),
   );
-  s.focusFirst = () => cards[0]?.focus();
+  s.focusFirst = () => autoFocus(cards[0]);
   return s;
 }
 

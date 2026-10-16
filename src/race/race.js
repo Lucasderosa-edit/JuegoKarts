@@ -44,7 +44,7 @@ export class Race {
       const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, 1, 0.1, quality.drawDistance + 200);
       const chase = new ChaseCamera(camera);
       chase.snap(kart);
-      const hud = new Hud(uiRoot);
+      const hud = new Hud(uiRoot, players.length > 1 ? { index: idx, of: players.length } : null);
       this.players.push({ kart, controls: p.controls, readInput: p.readInput, camera, chase, hud, throttleSince: null, autopilot: null });
     });
 
@@ -258,13 +258,26 @@ export class Race {
     this.particles.update(frameDt);
     const r = this.renderer;
     const w = r.domElement.clientWidth, h = r.domElement.clientHeight;
-    const pl = this.players[0];
-    pl.chase.update(pl.kart, frameDt);
-    pl.camera.aspect = w / h;
-    pl.camera.updateProjectionMatrix();
-    this.env.follow(pl.kart.position);
-    this.track.animate(frameDt, pl.kart.position);
-    r.render(this.scene, pl.camera);
+    const n = this.players.length;
+    // Pantalla dividida: un jugador arriba y el otro abajo
+    const views = n === 1
+      ? [{ x: 0, y: 0, w, h }]
+      : [{ x: 0, y: Math.floor(h / 2), w, h: Math.ceil(h / 2) }, { x: 0, y: 0, w, h: Math.floor(h / 2) }];
+    r.setScissorTest(n > 1);
+    this.players.forEach((pl, i) => {
+      const v = views[i];
+      pl.chase.update(pl.kart, frameDt);
+      pl.camera.aspect = v.w / v.h;
+      pl.camera.updateProjectionMatrix();
+      this.env.follow(pl.kart.position);
+      this.track.animate(i === 0 ? frameDt : 0, pl.kart.position);
+      if (n > 1) {
+        r.setViewport(v.x, v.y, v.w, v.h);
+        r.setScissor(v.x, v.y, v.w, v.h);
+      }
+      r.render(this.scene, pl.camera);
+    });
+    if (n > 1) r.setScissorTest(false);
     for (const p of this.players) p.hud.update({ kart: p.kart, progress: p.kart.progress, raceTime: Math.max(0, this.raceTime), rank: p.kart.rank || this.karts.length, total: this.karts.length });
   }
 
