@@ -44,6 +44,15 @@ export const CONFIG = {
     extraAccel: 32,        // aceleración extra durante el turbo
   },
 
+  // Carrera
+  race: {
+    laps: 3,
+    checkpoints: 10,       // puntos de control por vuelta (evitan atajos)
+    countdownSeconds: 3,
+    startBoostWindow: 0.55, // acelerar justo antes del ¡YA! da un turbo de largada
+    startBoostDuration: 0.9,
+  },
+
   // Pista
   track: {
     offroadSpeed: 0.5,     // en el pasto, la velocidad máxima baja a la mitad

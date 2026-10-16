@@ -5,10 +5,15 @@ import { Kart } from '../kart/kart.js';
 import { ChaseCamera } from '../kart/chaseCamera.js';
 import { Particles } from '../fx/particles.js';
 import { setupEnvironment } from './environment.js';
+import { RaceProgress } from './progress.js';
+import { Hud } from '../ui/hud.js';
+import { formatTime } from '../ui/format.js';
+
+const NO_INPUT = { throttle: 0, brake: 0, steer: 0, drift: false, item: false, itemPressed: false };
 
 // Una carrera: pista, karts, cámaras y reglas.
 export class Race {
-  constructor({ renderer, trackDef, quality, players }) {
+  constructor({ renderer, trackDef, quality, players, uiRoot }) {
     this.renderer = renderer;
     this.quality = quality;
     this.scene = new THREE.Scene();
@@ -21,25 +26,95 @@ export class Race {
     this.karts = [];
     this.players = [];
     players.forEach((p, idx) => {
-      const kart = new Kart({ colors: p.colors, stats: p.stats, name: p.name, particles: this.particles });
+      const kart = this.addKart(p, idx);
       kart.isPlayer = true;
-      const slot = this.track.gridSlot(idx);
-      kart.setPose(slot.x, slot.z, slot.yaw);
-      this.scene.add(kart.object);
-      this.karts.push(kart);
       const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, 1, 0.1, quality.drawDistance + 200);
       const chase = new ChaseCamera(camera);
       chase.snap(kart);
-      this.players.push({ kart, controls: p.controls, readInput: p.readInput, camera, chase });
+      const hud = new Hud(uiRoot);
+      this.players.push({ kart, controls: p.controls, readInput: p.readInput, camera, chase, hud, throttleSince: null });
     });
+
+    this.state = 'countdown';
+    this.countdown = CONFIG.race.countdownSeconds;
+    this.raceTime = 0;
     this.time = 0;
+    this._lastCount = null;
+    this.onFinish = null;
+  }
+
+  addKart(p, slotIndex) {
+    const kart = new Kart({ colors: p.colors, stats: p.stats, name: p.name, particles: this.particles });
+    const slot = this.track.gridSlot(slotIndex);
+    kart.setPose(slot.x, slot.z, slot.yaw);
+    kart.progress = new RaceProgress(this.track.path);
+    this.track.applyToKart(kart);
+    kart.progress.update(kart.trackDistance, 0);
+    this.scene.add(kart.object);
+    this.karts.push(kart);
+    return kart;
   }
 
   update(dt) {
     this.time += dt;
     for (const pl of this.players) pl.readInput(pl.controls);
-    for (const pl of this.players) pl.kart.update(dt, pl.controls);
-    for (const k of this.karts) this.track.applyToKart(k);
+
+    if (this.state === 'countdown') {
+      this.updateCountdown(dt);
+    } else {
+      this.raceTime += dt;
+    }
+
+    const racing = this.state !== 'countdown';
+    for (const pl of this.players) {
+      const finished = pl.kart.progress.finished;
+      pl.kart.update(dt, racing && !finished ? pl.controls : NO_INPUT);
+    }
+    for (const k of this.karts) {
+      this.track.applyToKart(k);
+      if (racing) this.handleProgress(k, k.progress.update(k.trackDistance, this.raceTime));
+    }
+  }
+
+  updateCountdown(dt) {
+    const prev = this.countdown;
+    this.countdown -= dt;
+    const shown = Math.ceil(this.countdown);
+    if (shown !== this._lastCount && shown > 0) {
+      this._lastCount = shown;
+      for (const pl of this.players) pl.hud.showCountdown(shown);
+      this.onCountdownTick?.(shown);
+    }
+    // Turbo de largada: acelerar en la ventana justa antes del ¡YA!
+    for (const pl of this.players) {
+      if (pl.controls.throttle > 0) { if (pl.throttleSince === null) pl.throttleSince = this.countdown; } else pl.throttleSince = null;
+    }
+    if (this.countdown <= 0 && prev > 0) {
+      this.state = 'racing';
+      this.raceTime = -this.countdown;
+      for (const pl of this.players) {
+        pl.hud.showCountdown('¡YA!', true);
+        if (pl.throttleSince !== null && pl.throttleSince <= CONFIG.race.startBoostWindow) pl.kart.boost(CONFIG.race.startBoostDuration);
+      }
+      this.onCountdownTick?.(0);
+    }
+  }
+
+  handleProgress(kart, event) {
+    if (!event) return;
+    const pl = this.players.find((p) => p.kart === kart);
+    if (event === 'lap' && pl) {
+      const p = kart.progress;
+      const last = p.lapTimes[p.lapTimes.length - 1];
+      pl.hud.showMessage(p.lap === p.laps ? `¡ÚLTIMA VUELTA!<br><small>${formatTime(last)}</small>` : `VUELTA ${p.lap}<br><small>${formatTime(last)}</small>`);
+    }
+    if (event === 'finish') {
+      if (pl) pl.hud.showMessage('¡LLEGADA!');
+      if (this.players.every((p) => p.kart.progress.finished)) {
+        this.state = 'finished';
+        this.onFinish?.(this);
+      }
+    }
   }
 
   render(frameDt) {
@@ -53,9 +128,11 @@ export class Race {
     pl.camera.updateProjectionMatrix();
     this.env.follow(pl.kart.position);
     r.render(this.scene, pl.camera);
+    for (const p of this.players) p.hud.update({ progress: p.kart.progress, raceTime: Math.max(0, this.raceTime) });
   }
 
   dispose() {
+    for (const p of this.players) p.hud.dispose();
     this.scene.traverse((o) => {
       if (o.geometry) o.geometry.dispose();
     });

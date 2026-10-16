@@ -17,6 +17,7 @@ const race = new Race({
   renderer,
   trackDef: pradera,
   quality,
+  uiRoot: ui,
   players: [{
     name: 'Jugador',
     colors: { body: '#ffcc33', accent: '#e8483b' },
@@ -39,8 +40,7 @@ const loop = new GameLoop({
   render(frameDt) {
     race.render(frameDt);
     const k = race.players[0].kart;
-    fpsLabel.textContent = `${loop.fps} FPS · ${Math.round(Math.abs(k.speed) * 3.6)} km/h`
-      + (k.surface.offroad ? ' · pasto' : '') + (k.drifting ? ` · derrape ${k.driftLevel}` : '') + (k.isBoosting ? ' · TURBO' : '');
+    fpsLabel.textContent = `${loop.fps} FPS · ${Math.round(Math.abs(k.speed) * 3.6)} km/h`;
   },
 });
 loop.start();

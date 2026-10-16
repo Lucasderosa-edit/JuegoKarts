@@ -1,0 +1,18 @@
+.hud { position: absolute; inset: 0; pointer-events: none; font-family: "Trebuchet MS", system-ui, sans-serif; color: #fff;
+  text-shadow: 0 2px 0 rgba(0,0,0,.45), 0 0 8px rgba(0,0,0,.35); }
+.hud-top-left { position: absolute; top: max(14px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left)); }
+.hud-top-right { position: absolute; top: max(14px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); text-align: right; }
+.hud-lap { font-size: 30px; font-weight: 900; letter-spacing: .5px; }
+.hud-lap small { font-size: 18px; opacity: .85; }
+.hud-time { font: 700 22px ui-monospace, "SF Mono", Menlo, monospace; }
+.hud-laps { font: 600 14px ui-monospace, monospace; opacity: .9; margin-top: 2px; }
+.hud-center { position: absolute; left: 0; right: 0; top: 26%; text-align: center; }
+.hud-count { font-size: 140px; font-weight: 900; line-height: 1; transform-origin: center; }
+.hud-count.pop { animation: hudPop .9s ease-out both; }
+.hud-count.go { color: #3dff7a; }
+.hud-msg { font-size: 44px; font-weight: 900; }
+.hud-msg.pop { animation: hudPop 1.6s ease-out both; }
+.hud-warn { position: absolute; left: 0; right: 0; top: 18%; text-align: center; font-size: 30px; font-weight: 900; color: #ffd23f; display: none; }
+.hud-warn.show { display: block; animation: hudBlink .8s steps(2) infinite; }
+@keyframes hudPop { 0% { transform: scale(2.2); opacity: 0; } 18% { transform: scale(1); opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; transform: scale(.9); } }
+@keyframes hudBlink { 50% { opacity: .2; } }
