@@ -44,6 +44,14 @@ export const CONFIG = {
     extraAccel: 32,        // aceleración extra durante el turbo
   },
 
+  // Pista
+  track: {
+    offroadSpeed: 0.5,     // en el pasto, la velocidad máxima baja a la mitad
+    offroadGrip: 0.75,
+    wallBounce: 0.35,      // cuánto rebota el kart contra el borde (0-1)
+    wallSpeedKeep: 0.92,   // velocidad que conserva al chocar
+  },
+
   // Cámara en tercera persona
   camera: {
     fov: 70,

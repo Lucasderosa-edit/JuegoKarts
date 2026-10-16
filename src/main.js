@@ -1,53 +1,29 @@
-import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { GameLoop } from './core/loop.js';
 import { createRenderer } from './core/renderer.js';
 import { KEY_BINDINGS, createControlState, readKeyboard, endInputFrame } from './core/input.js';
-import { Kart } from './kart/kart.js';
-import { ChaseCamera } from './kart/chaseCamera.js';
-import { Particles } from './fx/particles.js';
+import { QUALITY_PRESETS, defaultQualityId } from './core/quality.js';
+import { Race } from './race/race.js';
+import pradera from './track/tracks/pradera.js';
 
 const container = document.getElementById('game');
 const ui = document.getElementById('ui');
-const { renderer, onResize } = createRenderer(container);
+const { renderer } = createRenderer(container);
+const quality = QUALITY_PRESETS[defaultQualityId()];
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio));
+renderer.shadowMap.enabled = quality.shadows;
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color('#9fd6ff');
-scene.fog = new THREE.Fog('#9fd6ff', 80, 300);
-
-const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, window.innerWidth / window.innerHeight, 0.1, 1000);
-onResize((w, h) => { camera.aspect = w / h; camera.updateProjectionMatrix(); });
-
-// Luces
-scene.add(new THREE.HemisphereLight('#ffffff', '#5a7d3a', 1.2));
-const sun = new THREE.DirectionalLight('#ffffff', 2.2);
-sun.position.set(30, 50, 20);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-Object.assign(sun.shadow.camera, { left: -40, right: 40, top: 40, bottom: -40 });
-scene.add(sun, sun.target);
-
-// Piso con grilla para notar el movimiento
-const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(400, 400),
-  new THREE.MeshLambertMaterial({ color: '#6cc04a' }),
-);
-floor.rotation.x = -Math.PI / 2;
-floor.receiveShadow = true;
-scene.add(floor);
-const grid = new THREE.GridHelper(400, 80, '#4e9a33', '#5aae3c');
-grid.position.y = 0.01;
-scene.add(grid);
-
-const particles = new Particles(scene);
-const kart = new Kart({ colors: { body: '#ffcc33', accent: '#e8483b' }, particles });
-scene.add(kart.object);
-kart.setPose(0, 0, 0);
-
-const chase = new ChaseCamera(camera);
-chase.snap(kart);
-
-const controls = createControlState();
+const race = new Race({
+  renderer,
+  trackDef: pradera,
+  quality,
+  players: [{
+    name: 'Jugador',
+    colors: { body: '#ffcc33', accent: '#e8483b' },
+    controls: createControlState(),
+    readInput: (c) => readKeyboard(KEY_BINDINGS.solo, c),
+  }],
+});
 
 const fpsLabel = document.createElement('div');
 fpsLabel.className = 'debug-fps';
@@ -57,23 +33,17 @@ const loop = new GameLoop({
   hz: CONFIG.physicsHz,
   maxSteps: CONFIG.maxStepsPerFrame,
   update(dt) {
-    readKeyboard(KEY_BINDINGS.solo, controls);
-    kart.update(dt, controls);
+    race.update(dt);
     endInputFrame();
   },
   render(frameDt) {
-    kart.syncObject();
-    particles.update(frameDt);
-    chase.update(kart, frameDt);
-    // La luz del sol acompaña al kart para que siempre tenga sombra
-    sun.position.set(kart.position.x + 30, 50, kart.position.z + 20);
-    sun.target.position.copy(kart.position);
-    renderer.render(scene, camera);
-    fpsLabel.textContent = `${loop.fps} FPS · ${Math.round(Math.abs(kart.speed) * 3.6)} km/h`
-      + (kart.drifting ? ` · derrape nivel ${kart.driftLevel}` : '') + (kart.isBoosting ? ' · TURBO' : '');
+    race.render(frameDt);
+    const k = race.players[0].kart;
+    fpsLabel.textContent = `${loop.fps} FPS · ${Math.round(Math.abs(k.speed) * 3.6)} km/h`
+      + (k.surface.offroad ? ' · pasto' : '') + (k.drifting ? ` · derrape ${k.driftLevel}` : '') + (k.isBoosting ? ' · TURBO' : '');
   },
 });
 loop.start();
 
 // Acceso para pruebas automáticas
-window.__game = { loop, scene, kart };
+window.__game = { loop, race, get kart() { return race.players[0].kart; } };
