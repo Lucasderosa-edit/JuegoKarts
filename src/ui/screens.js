@@ -8,6 +8,12 @@ import { formatTime } from './format.js';
 const base = import.meta.env.BASE_URL;
 export const asset = (p) => `${base}assets/${p}`;
 
+// Video con dos formatos: MP4 (H.264) y WebM (VP9). Cada navegador usa el que puede.
+export function videoTag(name, attrs = 'muted loop playsinline') {
+  return `<video ${attrs}><source src="${asset(`video/${name}.mp4`)}" type='video/mp4; codecs="avc1.64001F"'>`
+    + `<source src="${asset(`video/${name}.webm`)}" type="video/webm"></video>`;
+}
+
 function el(html) {
   const t = document.createElement('template');
   t.innerHTML = html.trim();
@@ -23,9 +29,8 @@ function button(label, onClick, cls = '') {
 // Fondo del menú: el video en loop de los 4 personajes en la largada
 export function menuBackground() {
   const portrait = window.innerHeight > window.innerWidth;
-  const src = asset(`video/menu_bg_${portrait ? '9x16' : '16x9'}.mp4`);
   const bg = el(`<div class="menu-bg" style="background-image:url('${asset('img/menu_bg.webp')}')">
-    <video muted loop playsinline autoplay preload="auto" src="${src}"></video></div>`);
+    ${videoTag(`menu_bg_${portrait ? '9x16' : '16x9'}`, 'muted loop playsinline autoplay preload="auto"')}</div>`);
   const v = bg.querySelector('video');
   v.play?.().catch(() => {});
   return bg;
@@ -106,7 +111,7 @@ export function characterSelect({ title, hint, taken = [], onPick, onBack }) {
     const isTaken = taken.includes(c.id);
     const card = el(`<button class="card" data-id="${c.id}" ${isTaken ? 'disabled style="opacity:.4"' : ''}>
       <div class="media"><img src="${asset(`img/char_${c.id}.webp`)}" alt="">
-        <video muted loop playsinline preload="none" src="${asset(`video/char_${c.id}_idle.mp4`)}"></video></div>
+        ${videoTag(`char_${c.id}_idle`, 'muted loop playsinline preload="none"')}</div>
       <h3>${c.name}</h3><div class="species">${c.species}</div>
       ${statBars(c.stats)}
       <p>${c.tagline}</p>
@@ -145,7 +150,7 @@ export function trackSelect({ onPick, onBack, bestTimes = {} }) {
     const best = bestTimes[t.id];
     const card = el(`<button class="card" data-id="${t.id}">
       <div class="media"><img src="${asset(`img/track_${t.id}.webp`)}" alt="">
-        <video muted loop playsinline preload="none" src="${asset(`video/track_${t.id}.mp4`)}"></video></div>
+        ${videoTag(`track_${t.id}`, 'muted loop playsinline preload="none"')}</div>
       <h3>${t.name}</h3>
       <p>${t.description}</p>
       <div class="best">${best ? `Récord: ${formatTime(best.total)} · Vuelta: ${formatTime(best.lap)}` : 'Sin récord todavía'}</div>

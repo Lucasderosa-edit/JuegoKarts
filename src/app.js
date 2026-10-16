@@ -231,7 +231,7 @@ export class App {
     const winnerChar = best.kart.character;
     const videoKind = best.position <= 3 ? 'victory' : 'idle';
     const media = winnerChar.playable
-      ? `<video autoplay muted loop playsinline src="${screens.asset(`video/char_${winnerChar.id}_${videoKind}.mp4`)}"></video>` : '';
+      ? screens.videoTag(`char_${winnerChar.id}_${videoKind}`, 'autoplay muted loop playsinline') : '';
     const label = (k) => (solo ? 'vos' : `J${humans.indexOf(k) + 1}`);
     let title;
     if (solo) title = best.position === 1 ? '¡GANASTE!' : `Llegaste ${best.position}.º`;
