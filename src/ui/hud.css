@@ -23,3 +23,24 @@
 .hud-item.rolling img { opacity: .8; transform: scale(.9); }
 .hud-item.ready { border-color: #ffd23f; animation: itemReady 1s ease-in-out infinite; }
 @keyframes itemReady { 50% { box-shadow: 0 0 18px #ffd23f; } }
+.hud-speed { position: absolute; right: max(14px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); width: 128px; height: 128px; text-align: center; }
+.hud-speed svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hud-speed path { fill: none; stroke-width: 11; stroke-linecap: round; }
+.hud-speed .track { stroke: rgba(20,22,48,.55); }
+.hud-speed .fill { stroke: #ffd23f; transition: stroke-dashoffset .1s linear; }
+.hud-speed .fill.boost { stroke: #ff7a1f; }
+.hud-speed .num { position: absolute; left: 0; right: 0; top: 40px; font: 900 34px "Trebuchet MS", sans-serif; }
+.hud-speed .unit { position: absolute; left: 0; right: 0; top: 78px; font-size: 13px; font-weight: 700; opacity: .85; }
+.hud-map { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(10px, env(safe-area-inset-bottom)); width: 150px; height: 150px;
+  background: rgba(20,22,48,.35); border-radius: 16px; }
+.hud-map .road { fill: none; stroke: rgba(20,22,48,.75); stroke-width: 7; stroke-linejoin: round; }
+.hud-map .line { fill: none; stroke: rgba(255,255,255,.9); stroke-width: 3.2; stroke-linejoin: round; }
+.hud-map .start { fill: #fff; stroke: #1b1f3a; stroke-width: 1; }
+.hud-map .me { stroke: #fff; stroke-width: 1.4; }
+.hud-map .other { stroke: #1b1f3a; stroke-width: .8; }
+@media (max-width: 700px), (max-height: 500px) {
+  .hud-lap { font-size: 22px; } .hud-pos { font-size: 46px; } .hud-time { font-size: 17px; }
+  .hud-item { width: 72px; height: 72px; } .hud-item img { width: 58px; height: 58px; }
+  .hud-map { width: 110px; height: 110px; } .hud-speed { transform: scale(.8); transform-origin: bottom right; }
+  .hud-count { font-size: 100px; } .hud-msg { font-size: 32px; }
+}

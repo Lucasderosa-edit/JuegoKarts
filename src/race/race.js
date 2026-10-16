@@ -72,6 +72,8 @@ export class Race {
       this.emit('wall', { kart, strength });
     };
 
+    for (const p of this.players) p.hud.setupMinimap(this.track.path, this.karts, p.kart);
+
     this.items = new ItemManager(this);
     for (const d of this.ais) d.items = this.items;
 
